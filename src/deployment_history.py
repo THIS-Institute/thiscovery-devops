@@ -15,16 +15,25 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-from thiscovery_lib.dynamodb_utilities import DdbBaseTable
+import thiscovery_lib.utilities as utils
+from thiscovery_lib.dynamodb_utilities import DdbBaseItem
+
+import common.constants as const
 
 
-STACK_NAME = 'thiscovery-devops'
+class Deployment(DdbBaseItem):
+    def __init__(self, event):
+        self._logger = event.pop("logger", utils.get_logger())
+        self._correlation_id = event["id"]
+        self._event_detail = event["detail"]
+        self.stack_env = self._event_detail["stack_env"]
+        self.timestamp = event["time"]
+        super().__init__(
+            table=const.DeploymentsTable(correlation_id=self._correlation_id)
+        )
 
 
-class DeploymentsTable(DdbBaseTable):
-    name = "Deployments"
-    partition = "stack-env"
-    sort = "modified"
-
-    def __init__(self, correlation_id=None):
-        super().__init__(stack_name=STACK_NAME, correlation_id=correlation_id)
+@utils.lambda_wrapper
+def add_deployment(event, context):
+    deploymnet = Deployment(event)
+    return deploymnet.put()

@@ -1,2 +1,2 @@
-# thiscovery-skeleton
-Template Thiscovery stack
+# thiscovery-devops
+Thiscovery devops resources
