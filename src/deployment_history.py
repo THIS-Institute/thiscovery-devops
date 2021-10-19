@@ -25,9 +25,12 @@ class Deployment(DdbBaseItem):
     def __init__(self, event):
         self._logger = event.pop("logger", utils.get_logger())
         self._correlation_id = event["id"]
-        self._event_detail = event["detail"]
-        self.stack_env = self._event_detail["stack_env"]
+        event_detail = event["detail"]
+        self.stack = event_detail["stack"]
+        self.environment = event_detail["environment"]
+        self.stack_env = f"{self.stack}-{self.environment}"
         self.timestamp = event["time"]
+        self.source = event.get("source")
         super().__init__(
             table=const.DeploymentsTable(correlation_id=self._correlation_id)
         )
@@ -35,5 +38,5 @@ class Deployment(DdbBaseItem):
 
 @utils.lambda_wrapper
 def add_deployment(event, context):
-    deploymnet = Deployment(event)
-    return deploymnet.put()
+    deployment = Deployment(event)
+    return deployment.put()
