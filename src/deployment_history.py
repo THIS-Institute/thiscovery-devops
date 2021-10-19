@@ -28,6 +28,8 @@ class Deployment(DdbBaseItem):
         event_detail = event["detail"]
         self.stack = event_detail["stack"]
         self.environment = event_detail["environment"]
+        self.revision = event_detail["revision"]
+        self.branch = event_detail["branch"]
         self.stack_env = f"{self.stack}-{self.environment}"
         self.timestamp = event["time"]
         self.source = event.get("source")
