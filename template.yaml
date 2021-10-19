@@ -29,8 +29,11 @@ Resources:
           Type: EventBridgeRule
           Properties:
             Pattern:
-              source:
-                - aws.health
+              detail-type:
+                - deployment
+            EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+          Metadata:
+            StackeryName: DeploymentEvent
   Deployments:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -60,7 +63,11 @@ Parameters:
   EnvConfiglambdatimeoutAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/timeout
+  EnvConfigeventbridgethiscoveryeventbusAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
 Metadata:
   EnvConfigParameters:
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
+    EnvConfigeventbridgethiscoveryeventbusAsString: eventbridge.thiscovery-event-bus

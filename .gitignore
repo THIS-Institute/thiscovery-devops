@@ -148,3 +148,6 @@ dmypy.json
 *.out
 *.synctex.gz
 
+/.aws-sam/
+/.stackery/
+/.thiscovery/
