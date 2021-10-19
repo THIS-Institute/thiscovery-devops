@@ -18,12 +18,12 @@
 from thiscovery_lib.dynamodb_utilities import DdbBaseTable
 
 
-STACK_NAME = 'thiscovery-devops'
+STACK_NAME = "thiscovery-devops"
 
 
 class DeploymentsTable(DdbBaseTable):
     name = "Deployments"
-    partition = "stack-env"
+    partition = "stack_env"
     sort = "modified"
 
     def __init__(self, correlation_id=None):
