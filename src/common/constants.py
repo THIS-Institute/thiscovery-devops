@@ -28,3 +28,26 @@ class DeploymentsTable(DdbBaseTable):
 
     def __init__(self, correlation_id=None):
         super().__init__(stack_name=STACK_NAME, correlation_id=correlation_id)
+
+
+class CodeMetricsTable(DdbBaseTable):
+    name = "CodeMetrics"
+    partition = "repo"
+    sort = "timestamp"
+
+    def __init__(self, correlation_id=None):
+        super().__init__(stack_name=STACK_NAME, correlation_id=correlation_id)
+        self.table = self._ddb_client.get_table(self.name)
+
+    def exact_query(self, partition_value, sort_value):
+        return self.table.query(
+            KeyConditionExpression=f"{self.partition} = :{self.partition} "
+            f"AND #ts = :{self.sort}",
+            ExpressionAttributeNames={
+                "#ts": self.sort,
+            },
+            ExpressionAttributeValues={
+                f":{self.partition}": partition_value,
+                f":{self.sort}": sort_value,
+            },
+        )
