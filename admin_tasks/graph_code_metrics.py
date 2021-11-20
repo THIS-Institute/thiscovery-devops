@@ -109,29 +109,61 @@ def load_globals_from_file(input_filename):
         stack_data_series = data["services"]
 
 
+def sample_globals(step_size):
+    global timestamps
+    global thiscovery_loc_data_series
+    global stack_data_series
+    timestamps = [
+        v for i, v in enumerate(timestamps) if i in range(0, len(timestamps), step_size)
+    ]
+    thiscovery_loc_data_series = [
+        v
+        for i, v in enumerate(thiscovery_loc_data_series)
+        if i in range(0, len(thiscovery_loc_data_series), step_size)
+    ]
+    for key, value in stack_data_series.items():
+        value = [v for i, v in enumerate(value) if i in range(0, len(value), step_size)]
+        stack_data_series[key] = value
+
+
 def main():
+    sample_globals(10)  # sample 1 datapoint in every 10
+
     # generate graph of thiscovery totals
     chart = Highchart()
     options = {
         "title": {"text": "Thiscovery lines of code"},
         "subtitle": {"text": "Excludes comments and blank lines"},
         "xAxis": {
+            "categories": timestamps,
             "reversed": False,
             "title": {"enabled": True, "text": "Date"},
             "maxPadding": 0.05,
             "showLastLabel": True,
+            "plotBands": [
+                # 378 days starting on day 813 (813 to 1191)
+                {"color": "#FCFFC5", "from": 81, "to": 119},
+                # {'color': '#FCFFC5', 'from': 1000, 'to': 8},
+                # {'color': '#FCFFC5', 'from': 10, 'to': 12},
+            ],
         },
         "yAxis": {
             "title": {"text": "Lines of code"},
             "lineWidth": 2,
         },
-        "legend": {"enabled": False},
+        "legend": {"enabled": True},
         "tooltip": {
-            "pointFormat": "{point.y}",
+            "formatter": "function () {\
+                            return '<b>' + this.x + '</b><br/>' +\
+                                this.series.name + ': ' + this.y + '<br/>' +\
+                                'Total: ' + this.point.stackTotal;\
+                        }",
+            # "pointFormat": "{point.y}",
         },
+        "plotOptions": {"column": {"stacking": "normal"}},
     }
     chart.set_dict_options(options=options)
-    chart.add_data_set(thiscovery_loc_data_series, "bar")
+    chart.add_data_set(thiscovery_loc_data_series, "column")
     chart.save_file("thiscovery")
 
     # generate repo graph
@@ -143,12 +175,12 @@ def main():
     chart.set_dict_options(options=options)
     for r in REPOS:
         repo_data = stack_data_series[r]
-        chart.add_data_set(repo_data, "bar")
+        chart.add_data_set(repo_data, "column", r)
     chart.save_file("thiscovery_services")
 
 
 if __name__ == "__main__":
-    compute_graph_series()
-    save_globals_to_file("code_metrics.json")
-    # load_globals_from_file("code_metrics.json")
+    # compute_graph_series()
+    # save_globals_to_file("code_metrics.json")
+    load_globals_from_file("code_metrics_2018_2021.json")
     main()
