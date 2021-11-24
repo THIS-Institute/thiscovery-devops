@@ -12,6 +12,7 @@ import subprocess
 import thiscovery_lib.utilities as utils
 from prettytable import PrettyTable
 
+import admin_tasks.common.git_utilities as git_utils
 from src.common.constants import DeploymentsTable
 
 
@@ -32,6 +33,7 @@ repos_table.field_names = [
     "Commits behind",
     "Commits ahead",
     "Deployed revision",
+    "Revision datetime",
 ]
 
 
@@ -46,6 +48,7 @@ class StackDeploymentStatus:
         self.deployed_revision = None
         self.deployed_revision_behind = None
         self.deployed_revision_ahead = None
+        self.deployed_revision_datetime = None
 
     def get_deployment_history(self):
         deployments_table = DeploymentsTable(
@@ -64,30 +67,16 @@ class StackDeploymentStatus:
             )
         return self.deployment_history
 
-    def get_commit_delta_to_master(self):
-        def get_delta():
-            return subprocess.run(
-                [
-                    "git",
-                    "rev-list",
-                    "--left-right",
-                    "--count",
-                    f"origin/master...{self.deployed_revision}",
-                ],
-                capture_output=True,
-                check=True,
-                text=True,
-            ).stdout.strip()
+    def get_deployed_revision_delta_to_master(self):
+        (
+            self.deployed_revision_behind,
+            self.deployed_revision_ahead,
+        ) = git_utils.get_commit_delta_to_branch(self.deployed_revision)
 
-        try:
-            delta = get_delta()
-        except subprocess.CalledProcessError:
-            subprocess.run(["git", "fetch"])
-            delta = get_delta()
-        behind, ahead = delta.split("\t")
-        self.deployed_revision_behind = behind
-        self.deployed_revision_ahead = ahead
-        return behind, ahead
+    def get_deployed_revision_datetime(self):
+        self.deployed_revision_datetime = git_utils.datetime_of_git_revision(
+            self.deployed_revision
+        )
 
     def append_stack_report_to_repos_table(self):
         if DEPLOYMENT_HISTORY_GROUPING == "stack":
@@ -106,6 +95,7 @@ class StackDeploymentStatus:
                 self.deployed_revision_behind,
                 self.deployed_revision_ahead,
                 self.deployed_revision,
+                self.deployed_revision_datetime,
             ]
         )
 
@@ -121,7 +111,8 @@ def main(r, e):
         sds.deployed_revision_ahead = "NA"
         sds.deployed_revision = "NA"
     else:
-        sds.get_commit_delta_to_master()
+        sds.get_deployed_revision_datetime()
+        sds.get_deployed_revision_delta_to_master()
     sds.append_stack_report_to_repos_table()
 
 

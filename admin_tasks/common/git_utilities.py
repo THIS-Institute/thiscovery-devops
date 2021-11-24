@@ -21,6 +21,30 @@ import subprocess
 from dateutil import parser
 
 
+def get_commit_delta_to_branch(revision, branch="origin/master"):
+    def get_delta():
+        return subprocess.run(
+            [
+                "git",
+                "rev-list",
+                "--left-right",
+                "--count",
+                f"{branch}...{revision}",
+            ],
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+
+    try:
+        delta = get_delta()
+    except subprocess.CalledProcessError:
+        subprocess.run(["git", "fetch"])
+        delta = get_delta()
+    behind, ahead = delta.split("\t")
+    return behind, ahead
+
+
 def get_revision_of_earliest_commit():
     return subprocess.run(
         [
@@ -35,14 +59,14 @@ def get_revision_of_earliest_commit():
     ).stdout.strip()
 
 
-def datetime_of_earliest_repo_commit():
+def datetime_of_git_revision(revision):
     return subprocess.run(
         [
             "git",
             "show",
             "-s",
             "--format=%ci",
-            get_revision_of_earliest_commit(),
+            revision,
         ],
         capture_output=True,
         check=True,
@@ -55,7 +79,7 @@ def date_earliest_commit_dict(project_folder, repositories):
     earliest_commits = dict()
     for r in repositories:
         os.chdir(os.path.join(project_folder, r))
-        dt = datetime_of_earliest_repo_commit()
+        dt = datetime_of_git_revision(get_revision_of_earliest_commit())
         date_earliest_commit = dt.split()[0]
         earliest_commits[r] = parser.parse(date_earliest_commit)
     os.chdir(pwd)
