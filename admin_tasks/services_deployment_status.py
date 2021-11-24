@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 import local.secrets
-from local.dev_config import GITHUB_FOLDER, SECRETS_NAMESPACE, ENVS, REPOS
+from local.dev_config import (
+    GITHUB_FOLDER,
+    SECRETS_NAMESPACE,
+    ENVS,
+    REPOS,
+    DEPLOYMENT_HISTORY_GROUPING,
+)
 import os
 import subprocess
 import thiscovery_lib.utilities as utils
@@ -10,9 +16,19 @@ from src.common.constants import DeploymentsTable
 
 
 repos_table = PrettyTable()
+if DEPLOYMENT_HISTORY_GROUPING == "stack":
+    stack_env_columns = [
+        "Stack",
+        "Environment",
+    ]
+else:
+    stack_env_columns = [
+        "Environment",
+        "Stack",
+    ]
+
 repos_table.field_names = [
-    "Environment",
-    "Stack",
+    *stack_env_columns,
     "Commits behind",
     "Commits ahead",
     "Deployed revision",
@@ -74,10 +90,19 @@ class StackDeploymentStatus:
         return behind, ahead
 
     def append_stack_report_to_repos_table(self):
-        repos_table.add_row(
-            [
+        if DEPLOYMENT_HISTORY_GROUPING == "stack":
+            env_stack_order = [
+                self.stack_name,
+                self.env_name,
+            ]
+        else:
+            env_stack_order = [
                 self.env_name,
                 self.stack_name,
+            ]
+        repos_table.add_row(
+            [
+                *env_stack_order,
                 self.deployed_revision_behind,
                 self.deployed_revision_ahead,
                 self.deployed_revision,
@@ -85,24 +110,29 @@ class StackDeploymentStatus:
         )
 
 
-def main():
-    for e in ENVS:
-        for r in REPOS:
-            print(f"Working on {r} {e}")
-            os.chdir(os.path.join(GITHUB_FOLDER, r))
-            sds = StackDeploymentStatus(stack_name=r, env_name=e)
-            try:
-                sds.get_deployment_history()
-            except utils.ObjectDoesNotExistError:
-                sds.deployed_revision_behind = "NA"
-                sds.deployed_revision_ahead = "NA"
-                sds.deployed_revision = "NA"
-            else:
-                sds.get_commit_delta_to_master()
-            sds.append_stack_report_to_repos_table()
-    print("\nStack deployment status compared to origin/master:")
-    print(repos_table)
+def main(r, e):
+    print(f"Working on {r} {e}")
+    os.chdir(os.path.join(GITHUB_FOLDER, r))
+    sds = StackDeploymentStatus(stack_name=r, env_name=e)
+    try:
+        sds.get_deployment_history()
+    except utils.ObjectDoesNotExistError:
+        sds.deployed_revision_behind = "NA"
+        sds.deployed_revision_ahead = "NA"
+        sds.deployed_revision = "NA"
+    else:
+        sds.get_commit_delta_to_master()
+    sds.append_stack_report_to_repos_table()
 
 
 if __name__ == "__main__":
-    main()
+    if DEPLOYMENT_HISTORY_GROUPING == "stack":
+        for r in REPOS:
+            for e in ENVS:
+                main(r, e)
+    else:
+        for e in ENVS:
+            for r in REPOS:
+                main(r, e)
+    print("\nStack deployment status compared to origin/master:")
+    print(repos_table)
