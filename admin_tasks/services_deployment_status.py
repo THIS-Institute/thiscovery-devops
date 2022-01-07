@@ -20,20 +20,23 @@ repos_table = PrettyTable()
 if DEPLOYMENT_HISTORY_GROUPING == "stack":
     stack_env_columns = [
         "Stack",
-        "Environment",
+        "Env",
     ]
 else:
     stack_env_columns = [
-        "Environment",
+        "Env",
         "Stack",
     ]
 
 repos_table.field_names = [
     *stack_env_columns,
-    "Commits behind",
-    "Commits ahead",
+    "Behind",
+    "Ahead",
     "Deployed revision",
     "Revision datetime",
+    "thiscovery-lib revision",
+    "Epsagon",
+    "Deployment datetime",
 ]
 
 
@@ -49,6 +52,9 @@ class StackDeploymentStatus:
         self.deployed_revision_behind = None
         self.deployed_revision_ahead = None
         self.deployed_revision_datetime = None
+        self.deployment_datetime = None
+        self.epsagon_layer = None
+        self.thiscovery_lib_rev = None
 
     def get_deployment_history(self):
         deployments_table = DeploymentsTable(
@@ -59,12 +65,16 @@ class StackDeploymentStatus:
             stack_env=f"{self.stack_name}-{self.env_name}"
         )["Items"]
         try:
-            self.deployed_revision = self.deployment_history[0]["revision"]
+            latest_deployment = self.deployment_history[0]
         except IndexError:
             raise utils.ObjectDoesNotExistError(
                 f"No deployment found for stack {self.stack_name} in environment {self.env_name}",
                 details={},
             )
+        self.deployed_revision = latest_deployment["revision"]
+        self.deployment_datetime = latest_deployment["created"]
+        self.epsagon_layer = latest_deployment.get("epsagon_layer_version", "NA")
+        self.thiscovery_lib_rev = latest_deployment.get("thiscovery_lib_revision", "NA")
         return self.deployment_history
 
     def get_deployed_revision_delta_to_master(self):
@@ -95,7 +105,10 @@ class StackDeploymentStatus:
                 self.deployed_revision_behind,
                 self.deployed_revision_ahead,
                 self.deployed_revision,
-                self.deployed_revision_datetime,
+                self.deployed_revision_datetime[0:19],
+                self.thiscovery_lib_rev,
+                self.epsagon_layer,
+                self.deployment_datetime[0:19],
             ]
         )
 

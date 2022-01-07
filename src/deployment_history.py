@@ -30,6 +30,8 @@ class Deployment(DdbBaseItem):
         self.environment = event_detail["environment"]
         self.revision = event_detail["revision"]
         self.branch = event_detail["branch"]
+        self.epsagon_layer_version = event_detail.get("epsagon_layer_version")
+        self.thiscovery_lib_revision = event_detail.get("thiscovery_lib_revision")
         self.stack_env = f"{self.stack}-{self.environment}"
         self.timestamp = event["time"]
         self.source = event.get("source")
@@ -40,5 +42,8 @@ class Deployment(DdbBaseItem):
 
 @utils.lambda_wrapper
 def add_deployment(event, context):
+    """
+    Parses deployment events posted to the thiscovery event bus.
+    """
     deployment = Deployment(event)
     return deployment.put()
