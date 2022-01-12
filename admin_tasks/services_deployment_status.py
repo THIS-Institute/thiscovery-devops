@@ -84,11 +84,19 @@ class StackDeploymentStatus:
         ) = git_utils.get_commit_delta_to_branch(self.deployed_revision)
 
     def get_deployed_revision_datetime(self):
+        git_utils.checkout_master()
+        git_utils.pull()
         self.deployed_revision_datetime = git_utils.datetime_of_git_revision(
             self.deployed_revision
         )
 
     def append_stack_report_to_repos_table(self):
+        try:
+            deployed_revision_datetime = self.deployed_revision_datetime[0:19]
+            deployment_datetime = self.deployment_datetime[0:19]
+        except TypeError:
+            deployed_revision_datetime = "NA"
+            deployment_datetime = "NA"
         if DEPLOYMENT_HISTORY_GROUPING == "stack":
             env_stack_order = [
                 self.stack_name,
@@ -105,10 +113,10 @@ class StackDeploymentStatus:
                 self.deployed_revision_behind,
                 self.deployed_revision_ahead,
                 self.deployed_revision,
-                self.deployed_revision_datetime[0:19],
+                deployed_revision_datetime,
                 self.thiscovery_lib_rev,
                 self.epsagon_layer,
-                self.deployment_datetime[0:19],
+                deployment_datetime,
             ]
         )
 
