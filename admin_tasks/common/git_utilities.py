@@ -59,6 +59,24 @@ def get_revision_of_earliest_commit():
     ).stdout.strip()
 
 
+def checkout_master():
+    return subprocess.run(
+        ["git", "checkout", "master"],
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout.strip()
+
+
+def pull():
+    return subprocess.run(
+        ["git", "pull"],
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout.strip()
+
+
 def datetime_of_git_revision(revision):
     return subprocess.run(
         [
