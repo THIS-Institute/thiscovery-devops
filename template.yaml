@@ -1,4 +1,18 @@
 Transform: AWS::Serverless-2016-10-31
+
+
+Globals:
+  Function:
+    Runtime: python3.8
+    MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+    Timeout: !Ref EnvConfiglambdatimeoutAsString
+    CodeUri: src
+    Tracing: Active
+    Environment:
+      Variables:
+        SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+
+
 Resources:
 
   AddDeployment:
@@ -8,12 +22,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: AddDeployment
-      CodeUri: src
       Handler: deployment_history.add_deployment
-      Runtime: python3.8
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
-      Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSSecretsManagerGetSecretValuePolicy:
@@ -22,7 +31,6 @@ Resources:
             TableName: !Ref Deployments
       Environment:
         Variables:
-          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
           TABLE_NAME: !Ref Deployments
           TABLE_ARN: !GetAtt Deployments.Arn
       Events:
@@ -90,6 +98,8 @@ Parameters:
   EnvConfigeventbridgethiscoveryeventbusAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+
+
 Metadata:
   EnvConfigParameters:
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
