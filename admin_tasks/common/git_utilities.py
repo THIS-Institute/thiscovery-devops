@@ -16,11 +16,35 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import functools
 import os
 import subprocess
 from dateutil import parser
 
 
+class DetailedCalledProcessError(subprocess.CalledProcessError):
+    def __init__(self, called_process_error):
+        self.err_message = f"{called_process_error.__str__()}\n" \
+                           f"Standard error output:\n" \
+                           f"{called_process_error.stderr}"
+
+    def __str__(self):
+        return self.err_message
+
+
+def detailed_subprocess_error(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except subprocess.CalledProcessError as called_process_error:
+            detailed_error = DetailedCalledProcessError(called_process_error)
+            raise detailed_error
+
+    return wrapper
+
+
+@detailed_subprocess_error
 def get_commit_delta_to_branch(revision, branch="origin/master"):
     def get_delta():
         return subprocess.run(
@@ -45,6 +69,7 @@ def get_commit_delta_to_branch(revision, branch="origin/master"):
     return behind, ahead
 
 
+@detailed_subprocess_error
 def get_revision_of_earliest_commit():
     return subprocess.run(
         [
@@ -59,6 +84,7 @@ def get_revision_of_earliest_commit():
     ).stdout.strip()
 
 
+@detailed_subprocess_error
 def checkout_master():
     return subprocess.run(
         ["git", "checkout", "master"],
@@ -68,6 +94,7 @@ def checkout_master():
     ).stdout.strip()
 
 
+@detailed_subprocess_error
 def pull():
     return subprocess.run(
         ["git", "pull"],
@@ -77,6 +104,7 @@ def pull():
     ).stdout.strip()
 
 
+@detailed_subprocess_error
 def datetime_of_git_revision(revision):
     return subprocess.run(
         [
@@ -104,6 +132,7 @@ def date_earliest_commit_dict(project_folder, repositories):
     return earliest_commits
 
 
+@detailed_subprocess_error
 def get_branch_revision_at_timestamp(date_str, branch):
     def get_revision():
         return subprocess.run(
@@ -128,6 +157,7 @@ def get_branch_revision_at_timestamp(date_str, branch):
     return git_revision
 
 
+@detailed_subprocess_error
 def count_lines_of_code_for_revision(revision):
     """
     Uses the cloc command line tool (https://github.com/AlDanial/cloc)
