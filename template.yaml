@@ -15,6 +15,70 @@ Globals:
 
 Resources:
 
+  DeploymentArtifactsBucket:
+    Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Sub ${AWS::StackName}-deployment-artifacts
+
+  CloudFormationExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow,
+            Principal:
+              Service: "cloudformation.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: GrantCloudFormationFullAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action": "*"
+                Resource: "*"
+                Effect: "Allow"
+
+  DeploymentPipelineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow,
+            Principal:
+              AWS: !Ref DeploymentUserArnAsString
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: PipelineExecutionRolePermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action": "iam:PassRole"
+                Resource: !Ref CloudFormationExecutionRole
+                Effect: "Allow"
+              - Action":
+                - "cloudformation:CreateChangeSet"
+                - "cloudformation:DescribeChangeSet"
+                - "cloudformation:ExecuteChangeSet"
+                - "cloudformation:DescribeStackEvents"
+                - "cloudformation:DescribeStacks"
+                - "cloudformation:GetTemplateSummary"
+                - "cloudformation:DescribeStackResource"
+                Resource: "*",
+                Effect: "Allow"
+              - Action:
+                - "s3:GetObject*"
+                - "s3:PutObject*"
+                - "s3:GetBucket*"
+                - "s3:List*"
+                Resource:
+                  - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}/*
+                  - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}
+                Effect: "Allow"
+
   AddDeployment:
     Type: AWS::Serverless::Function
     Properties:
@@ -86,6 +150,9 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+  DeploymentUserArnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/deployment-user/arn
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
