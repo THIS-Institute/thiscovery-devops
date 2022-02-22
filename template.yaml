@@ -17,8 +17,8 @@ Resources:
 
   DeploymentArtifactsBucket:
     Type: AWS::S3::Bucket
-      Properties:
-        BucketName: !Sub ${AWS::StackName}-deployment-artifacts
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-deployment-artifacts
 
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
