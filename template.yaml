@@ -56,10 +56,10 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Action": "iam:PassRole"
+              - Action: "iam:PassRole"
                 Resource: !Ref CloudFormationExecutionRole
                 Effect: "Allow"
-              - Action":
+              - Action:
                 - "cloudformation:CreateChangeSet"
                 - "cloudformation:DescribeChangeSet"
                 - "cloudformation:ExecuteChangeSet"
