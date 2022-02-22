@@ -67,7 +67,7 @@ Resources:
                 - "cloudformation:DescribeStacks"
                 - "cloudformation:GetTemplateSummary"
                 - "cloudformation:DescribeStackResource"
-                Resource: "*",
+                Resource: "*"
                 Effect: "Allow"
               - Action:
                 - "s3:GetObject*"
