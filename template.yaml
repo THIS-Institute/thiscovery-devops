@@ -57,7 +57,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action: "iam:PassRole"
-                Resource: !Ref CloudFormationExecutionRole
+                Resource: !GetAtt CloudFormationExecutionRole.Arn
                 Effect: "Allow"
               - Action:
                 - "cloudformation:CreateChangeSet"
