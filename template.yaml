@@ -39,6 +39,7 @@ Resources:
               - Action: "*"
                 Resource: "*"
                 Effect: "Allow"
+      RoleName: !Sub ${AWS::StackName}-${AWS::Region}-CFExec
 
   DeploymentPipelineExecutionRole:
     Type: AWS::IAM::Role
@@ -78,6 +79,7 @@ Resources:
                   - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}/*
                   - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}
                 Effect: "Allow"
+      RoleName: !Sub ${AWS::StackName}-${AWS::Region}-PipelineExec
 
   AddDeployment:
     Type: AWS::Serverless::Function
