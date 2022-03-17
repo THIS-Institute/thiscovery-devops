@@ -80,6 +80,9 @@ Resources:
                   - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}
                 Effect: "Allow"
       RoleName: !Sub ${AWS::StackName}-${AWS::Region}-PipelineExec
+      Tags:
+        - Key: "Role"
+          Value: "pipeline-execution-role"
 
   AddDeployment:
     Type: AWS::Serverless::Function
