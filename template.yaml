@@ -53,6 +53,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
       Policies:
+        - AmazonSSMReadOnlyAccess
         - PolicyName: PipelineExecutionRolePermissions
           PolicyDocument:
             Version: "2012-10-17"
