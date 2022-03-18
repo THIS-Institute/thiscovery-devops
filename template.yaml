@@ -86,6 +86,10 @@ Resources:
                 - "ssm:List*"
                 Resource: "*"
                 Effect: "Allow"
+              - Action:
+                - "events:PutEvents"
+                Resource: !Ref EventbridgethiscoveryeventbusArnAsString
+                Effect: "Allow"
       RoleName: !Sub ${AWS::StackName}-${AWS::Region}-PipelineExec
       Tags:
         - Key: "Role"
@@ -177,6 +181,9 @@ Parameters:
   EnvConfigeventbridgethiscoveryeventbusAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+  EventbridgethiscoveryeventbusArnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus-arn
 
 
 Metadata:
