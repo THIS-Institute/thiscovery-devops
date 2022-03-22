@@ -15,6 +15,86 @@ Globals:
 
 Resources:
 
+  DeploymentArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-deployment-artifacts
+
+  CloudFormationExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "cloudformation.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: GrantCloudFormationFullAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "*"
+                Resource: "*"
+                Effect: "Allow"
+      RoleName: !Sub ${AWS::StackName}-${AWS::Region}-CFExec
+
+  DeploymentPipelineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref DeploymentUserArnAsString
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: PipelineExecutionRolePermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "iam:PassRole"
+                Resource: !GetAtt CloudFormationExecutionRole.Arn
+                Effect: "Allow"
+              - Action:
+                - "cloudformation:CreateChangeSet"
+                - "cloudformation:DescribeChangeSet"
+                - "cloudformation:ExecuteChangeSet"
+                - "cloudformation:DescribeStackEvents"
+                - "cloudformation:DescribeStacks"
+                - "cloudformation:GetTemplateSummary"
+                - "cloudformation:DescribeStackResource"
+                - "cloudformation:ValidateTemplate"
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                - "s3:GetObject*"
+                - "s3:PutObject*"
+                - "s3:GetBucket*"
+                - "s3:List*"
+                Resource:
+                  - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}/*
+                  - !Sub arn:aws:s3:::${DeploymentArtifactsBucket}
+                Effect: "Allow"
+              - Action:
+                - "ssm:Describe*"
+                - "ssm:Get*"
+                - "ssm:List*"
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                - "events:PutEvents"
+                Resource: !Ref EventbridgethiscoveryeventbusArnAsString
+                Effect: "Allow"
+      RoleName: !Sub ${AWS::StackName}-${AWS::Region}-PipelineExec
+      Tags:
+        - Key: "Role"
+          Value: "pipeline-execution-role"
+
   AddDeployment:
     Type: AWS::Serverless::Function
     Properties:
@@ -86,6 +166,9 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+  DeploymentUserArnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/deployment-user/arn
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
@@ -98,6 +181,9 @@ Parameters:
   EnvConfigeventbridgethiscoveryeventbusAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+  EventbridgethiscoveryeventbusArnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus-arn
 
 
 Metadata:
