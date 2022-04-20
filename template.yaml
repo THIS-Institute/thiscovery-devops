@@ -93,7 +93,7 @@ Resources:
               - Action:
                 - "secretsmanager:GetSecretValue"
                 Resource:
-                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/aws-connection
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/aws-connection*
                 Effect: "Allow"
       RoleName: !Sub ${AWS::StackName}-${AWS::Region}-PipelineExec
       Tags:
