@@ -16,6 +16,8 @@ import admin_tasks.common.git_utilities as git_utils
 from src.common.constants import DeploymentsTable
 
 
+ERROR_STR = "Error"
+
 repos_table = PrettyTable()
 if DEPLOYMENT_HISTORY_GROUPING == "stack":
     stack_env_columns = [
@@ -32,9 +34,9 @@ repos_table.field_names = [
     *stack_env_columns,
     "Behind",
     "Ahead",
-    "Deployed revision",
+    "Deployed rev",
     "Revision datetime",
-    "thiscovery-lib revision",
+    "thiscovery-lib rev",
     "Epsagon",
     "Deployment datetime",
 ]
@@ -55,6 +57,8 @@ class StackDeploymentStatus:
         self.deployment_datetime = None
         self.epsagon_layer = None
         self.thiscovery_lib_rev = None
+        self.latest_deployment = None
+        self.logger = utils.get_logger()
 
     def get_deployment_history(self):
         deployments_table = DeploymentsTable(
@@ -65,30 +69,41 @@ class StackDeploymentStatus:
             stack_env=f"{self.stack_name}-{self.env_name}"
         )["Items"]
         try:
-            latest_deployment = self.deployment_history[0]
+            self.latest_deployment = self.deployment_history[0]
         except IndexError:
             raise utils.ObjectDoesNotExistError(
                 f"No deployment found for stack {self.stack_name} in environment {self.env_name}",
                 details={},
             )
-        self.deployed_revision = latest_deployment["revision"]
-        self.deployment_datetime = latest_deployment["created"]
-        self.epsagon_layer = latest_deployment.get("epsagon_layer_version", "NA")
-        self.thiscovery_lib_rev = latest_deployment.get("thiscovery_lib_revision", "NA")
+        self.deployed_revision = self.latest_deployment["revision"][:8]
+        self.deployment_datetime = self.latest_deployment["created"]
+        self.epsagon_layer = self.latest_deployment.get("epsagon_layer_version", "NA")
+        self.thiscovery_lib_rev = self.latest_deployment.get(
+            "thiscovery_lib_revision", "NA"
+        )[:8]
         return self.deployment_history
 
     def get_deployed_revision_delta_to_master(self):
-        (
-            self.deployed_revision_behind,
-            self.deployed_revision_ahead,
-        ) = git_utils.get_commit_delta_to_branch(self.deployed_revision)
+        try:
+            (
+                self.deployed_revision_behind,
+                self.deployed_revision_ahead,
+            ) = git_utils.get_commit_delta_to_branch(self.deployed_revision)
+        except git_utils.DetailedCalledProcessError as err:
+            self.logger.error(err, extra={})
+            self.deployed_revision_behind = ERROR_STR
+            self.deployed_revision_ahead = ERROR_STR
 
     def get_deployed_revision_datetime(self):
         git_utils.checkout_master()
         git_utils.pull()
-        self.deployed_revision_datetime = git_utils.datetime_of_git_revision(
-            self.deployed_revision
-        )
+        try:
+            self.deployed_revision_datetime = git_utils.datetime_of_git_revision(
+                self.deployed_revision
+            )
+        except git_utils.DetailedCalledProcessError as err:
+            self.logger.error(err, extra={})
+            self.deployed_revision_datetime = ERROR_STR
 
     def append_stack_report_to_repos_table(self):
         try:
