@@ -95,6 +95,19 @@ def checkout_master():
 
 
 @detailed_subprocess_error
+def checkout_revision(revision: str, branch_name=None):
+    cmd = ["git", "checkout", revision]
+    if branch_name:
+        cmd += ["-b", branch_name]
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout.strip()
+
+
+@detailed_subprocess_error
 def pull():
     return subprocess.run(
         ["git", "pull"],
